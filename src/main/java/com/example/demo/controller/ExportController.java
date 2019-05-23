@@ -129,10 +129,13 @@ public class ExportController {
         List<Client> allClients = clientService.findAllClients();
         Workbook workbook = new XSSFWorkbook();
         for (Client client : allClients) {
+
+            // Nom de l'onglet
             Sheet sheet = workbook.createSheet(client.getNom());
+            //
             Row headerRow = sheet.createRow(0);
 
-            // Paramétre Nom, Prenom etc...
+            //Nom, Prenom etc...
             Cell cellId = headerRow.createCell(0);
             cellId.setCellValue("Id");
 
@@ -160,12 +163,14 @@ public class ExportController {
             Cell dateNaissance = row.createCell(3);
             dateNaissance.setCellValue(client.getDateNaissance().format(DateTimeFormatter.ofPattern("dd/MM/YYYY")));
 
+            //Récupere les factures du clients depuis son ID
             List<Facture> factures = factureService.findFacturesClient(client.getId());
             //Factures
             for (Facture facture : factures) {
                 Sheet sheetFacture = workbook.createSheet("Facture "+ facture.getId().toString());
                 Row headerRowFacture = sheetFacture.createRow(0);
 
+                //Nom de produit, prix , quantité
                 Cell cellNomProduit = headerRowFacture.createCell(0);
                 cellNomProduit.setCellValue("Nom de produit");
 
@@ -178,7 +183,10 @@ public class ExportController {
                 Cell cellSousTotal = headerRowFacture.createCell(3);
                 cellSousTotal.setCellValue("Sous total");
 
+                // Compteur de ligne facture
                 int rowFacture = 1;
+
+                // Je fais une boucle for sur facture.getLigneFacture pour récuperer les details de la facture (Le nom de l'article, le prix, la quantité et le sous-total
                 for(LigneFacture lignefacture : facture.getLigneFactures()){
                     Row rowF = sheetFacture.createRow(rowFacture);
 
@@ -194,16 +202,19 @@ public class ExportController {
                     Cell cellSTotal = rowF.createCell(3);
                     cellSTotal.setCellValue(lignefacture.getSousTotal());
 
+                    // compteur pour chaque ligne de facture
                     rowFacture = rowFacture + 1;
                 }
+                //Création style cellule pour Total
                 CellStyle style = workbook.createCellStyle();
                 style.setFillForegroundColor(IndexedColors.RED.getIndex());
                 style.setFillPattern(FillPatternType.forInt(PatternFormatting.SOLID_FOREGROUND));
                 Font font = workbook.createFont();
                 font.setColor(IndexedColors.WHITE.getIndex());
-                style.setAlignment(HorizontalAlignment.CENTER);
+                style.setAlignment(HorizontalAlignment.RIGHT);
                 style.setFont(font);
 
+                //Création style cellule pour le resultat du total
                 CellStyle styleResultat = workbook.createCellStyle();
                 styleResultat.setFillForegroundColor(IndexedColors.RED.getIndex());
                 styleResultat.setFillPattern(FillPatternType.forInt(PatternFormatting.SOLID_FOREGROUND));
@@ -211,13 +222,18 @@ public class ExportController {
                 fontResultat.setColor(IndexedColors.WHITE.getIndex());
                 styleResultat.setFont(fontResultat);
 
-                Row rowTotal = sheetFacture.createRow(rowFacture);
 
+                // Mise en place du total et de son prix
+
+                // TOTAL
+                Row rowTotal = sheetFacture.createRow(rowFacture);
                 Cell cellTotal =rowTotal.createCell(0);
                 cellTotal.setCellValue("Total");
-
                 cellTotal.setCellStyle(style);
+                // Fusion de cellule,
                 sheetFacture.addMergedRegion(new CellRangeAddress(rowFacture,rowFacture,0,2));
+
+                // RESULTAT DU TOTAL
                 Cell cellPrixTotal = rowTotal.createCell(3);
                 cellPrixTotal.setCellValue(facture.getTotal());
                 cellPrixTotal.setCellStyle(styleResultat);
@@ -226,6 +242,7 @@ public class ExportController {
 
 
         }
+        // Fermeture de worbook
         workbook.write(response.getOutputStream());
         workbook.close();
 
